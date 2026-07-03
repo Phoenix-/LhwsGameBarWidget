@@ -61,11 +61,9 @@ public sealed class LhwsSensorReader : IDisposable
             return null;
         }
 
-        byte[] indexBytes;
         byte[] dataBytes;
         int updateInterval;
         long lastUpdate;
-        int indexFormat;
 
         bool acquired = false;
         try
@@ -84,23 +82,15 @@ public sealed class LhwsSensorReader : IDisposable
             lastUpdate = accessor.ReadInt64(8);
 
             int header = 4 + metadataSize;
-            int indexLength = accessor.ReadInt32(header);
-            int indexOffset = accessor.ReadInt32(header + 4);
-            indexFormat = accessor.ReadInt32(header + 8);
             int dataLength = accessor.ReadInt32(header + 12);
             int dataOffset = accessor.ReadInt32(header + 16);
 
             long capacity = accessor.Capacity;
-            if (indexLength <= 0 || dataLength <= 0 ||
-                indexOffset < 0 || dataOffset < 0 ||
-                indexOffset + (long)indexLength > capacity ||
-                dataOffset + (long)dataLength > capacity)
+            if (dataLength <= 0 || dataOffset < 0 || dataOffset + (long)dataLength > capacity)
             {
                 return null; // service has not written a full snapshot yet
             }
 
-            indexBytes = new byte[indexLength];
-            accessor.ReadArray(indexOffset, indexBytes, 0, indexLength);
             dataBytes = new byte[dataLength];
             accessor.ReadArray(dataOffset, dataBytes, 0, dataLength);
         }
@@ -112,27 +102,28 @@ public sealed class LhwsSensorReader : IDisposable
             }
         }
 
-        // Parse outside the mutex to keep the service's write path unblocked
-        if (indexFormat != 1)
+        // Parse outside the mutex to keep the service's write path unblocked.
+        // The data block is a sequence of JSON sensor objects, each followed by a NUL
+        // byte, so the index (whose format depends on the service's indexFormat
+        // setting) is not needed at all.
+        var sensors = new List<SensorReading>();
+        int start = 0;
+        for (int i = 0; i < dataBytes.Length; i++)
         {
-            throw new NotSupportedException(
-                $"indexFormat={indexFormat} is not supported, set Settings:indexFormat=1 (json) in the service config");
-        }
-
-        var index = JsonSerializer.Deserialize(indexBytes, LhwsJsonContext.Default.ListDataIndexEntry) ?? [];
-        var sensors = new List<SensorReading>(index.Count);
-        foreach (var entry in index)
-        {
-            if (entry.Offset < 0 || entry.Size <= 0 || entry.Offset + entry.Size > dataBytes.Length)
+            if (dataBytes[i] != 0)
             {
                 continue;
             }
-            var sensor = JsonSerializer.Deserialize(
-                dataBytes.AsSpan(entry.Offset, entry.Size), LhwsJsonContext.Default.SensorReading);
-            if (sensor != null)
+            if (i > start)
             {
-                sensors.Add(sensor);
+                var sensor = JsonSerializer.Deserialize(
+                    dataBytes.AsSpan(start, i - start), LhwsJsonContext.Default.SensorReading);
+                if (sensor != null)
+                {
+                    sensors.Add(sensor);
+                }
             }
+            start = i + 1;
         }
 
         return new LhwsSnapshot

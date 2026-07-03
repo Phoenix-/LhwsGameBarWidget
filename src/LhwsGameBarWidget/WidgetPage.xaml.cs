@@ -73,18 +73,7 @@ public sealed partial class WidgetPage : Page
             return;
         }
 
-        LhwsSnapshot? snapshot;
-        try
-        {
-            snapshot = reader.Read();
-        }
-        catch (NotSupportedException ex)
-        {
-            timer.Stop();
-            StatusText.Text = ex.Message;
-            return;
-        }
-
+        var snapshot = reader.Read();
         if (snapshot == null)
         {
             StatusText.Text = "Waiting for sensor data…";

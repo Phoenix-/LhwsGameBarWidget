@@ -2,18 +2,8 @@ using System.Text.Json.Serialization;
 
 namespace LhwsGameBarWidget.Lhws;
 
-// Wire format of LibreHardwareService (service/src/models/DataIndex.cs, DataSensor.cs),
+// Wire format of LibreHardwareService (service/src/models/DataSensor.cs),
 // serialized as camelCase JSON.
-
-public sealed class DataIndexEntry
-{
-    [JsonPropertyName("identifier")] public string Identifier { get; set; } = "";
-    [JsonPropertyName("offset")] public int Offset { get; set; }
-    [JsonPropertyName("size")] public int Size { get; set; }
-    [JsonPropertyName("sensorName")] public string SensorName { get; set; } = "";
-    [JsonPropertyName("sensorType")] public string SensorType { get; set; } = "";
-    [JsonPropertyName("hardwareName")] public string HardwareName { get; set; } = "";
-}
 
 public sealed class SensorReading
 {
@@ -36,7 +26,6 @@ public sealed class LhwsSnapshot
 }
 
 // UWP on .NET 9 publishes with Native AOT, so reflection-based System.Text.Json is unavailable
-[JsonSerializable(typeof(List<DataIndexEntry>))]
 [JsonSerializable(typeof(SensorReading))]
 internal sealed partial class LhwsJsonContext : JsonSerializerContext
 {
