@@ -11,6 +11,7 @@
     <RootNamespace>Microsoft.Gaming.XboxGameBar</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>disable</Nullable>
+    <DefaultLanguage>en-US</DefaultLanguage>
     <CsWinRTIncludes>Microsoft.Gaming.XboxGameBar</CsWinRTIncludes>
   </PropertyGroup>
 
