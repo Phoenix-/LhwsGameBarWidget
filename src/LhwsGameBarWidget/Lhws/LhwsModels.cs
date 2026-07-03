@@ -1,0 +1,43 @@
+using System.Text.Json.Serialization;
+
+namespace LhwsGameBarWidget.Lhws;
+
+// Wire format of LibreHardwareService (service/src/models/DataIndex.cs, DataSensor.cs),
+// serialized as camelCase JSON.
+
+public sealed class DataIndexEntry
+{
+    [JsonPropertyName("identifier")] public string Identifier { get; set; } = "";
+    [JsonPropertyName("offset")] public int Offset { get; set; }
+    [JsonPropertyName("size")] public int Size { get; set; }
+    [JsonPropertyName("sensorName")] public string SensorName { get; set; } = "";
+    [JsonPropertyName("sensorType")] public string SensorType { get; set; } = "";
+    [JsonPropertyName("hardwareName")] public string HardwareName { get; set; } = "";
+}
+
+public sealed class SensorReading
+{
+    [JsonPropertyName("identifier")] public string Identifier { get; set; } = "";
+    [JsonPropertyName("name")] public string Name { get; set; } = "";
+    [JsonPropertyName("sensorType")] public string SensorType { get; set; } = "";
+    [JsonPropertyName("hardwareId")] public string HardwareId { get; set; } = "";
+    [JsonPropertyName("hardwareName")] public string HardwareName { get; set; } = "";
+    [JsonPropertyName("hardwareType")] public string HardwareType { get; set; } = "";
+    [JsonPropertyName("value")] public float Value { get; set; }
+    [JsonPropertyName("min")] public float Min { get; set; }
+    [JsonPropertyName("max")] public float Max { get; set; }
+}
+
+public sealed class LhwsSnapshot
+{
+    public long LastUpdateUnixSeconds { get; init; }
+    public int UpdateIntervalMs { get; init; }
+    public IReadOnlyList<SensorReading> Sensors { get; init; } = [];
+}
+
+// UWP on .NET 9 publishes with Native AOT, so reflection-based System.Text.Json is unavailable
+[JsonSerializable(typeof(List<DataIndexEntry>))]
+[JsonSerializable(typeof(SensorReading))]
+internal sealed partial class LhwsJsonContext : JsonSerializerContext
+{
+}

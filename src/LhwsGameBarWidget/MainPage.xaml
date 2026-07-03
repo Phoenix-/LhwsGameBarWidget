@@ -1,0 +1,12 @@
+<Page
+    x:Class="LhwsGameBarWidget.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8" Padding="24">
+        <TextBlock Text="LHWS Sensors" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center"/>
+        <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"
+                   Text="This app is an Xbox Game Bar widget. Press Win+G and open the 'LHWS Sensors' widget."/>
+    </StackPanel>
+</Page>

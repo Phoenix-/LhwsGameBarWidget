@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>LhwsGameBarWidget</RootNamespace>
+    <UseUwp>true</UseUwp>
+    <UseUwpTools>true</UseUwpTools>
+    <Platforms>x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+    <DefaultLanguage>en-US</DefaultLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <XboxGameBarRid Condition="'$(Platform)' == 'ARM64'">win10-arm64</XboxGameBarRid>
+    <XboxGameBarRid Condition="'$(XboxGameBarRid)' == ''">win10-x64</XboxGameBarRid>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The Game Bar API surface comes via a CsWinRT projection (uap10.0-only package);
+         the native implementation dll, pri and winmd still have to ship in the package. -->
+    <ProjectReference Include="..\XboxGameBar.Projection\XboxGameBar.Projection.csproj" />
+    <PackageReference Include="Microsoft.Gaming.XboxGameBar" Version="7.2.240903001" GeneratePathProperty="true" ExcludeAssets="all" />
+    <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\runtimes\$(XboxGameBarRid)\native\Microsoft.Gaming.XboxGameBar.dll" Link="Microsoft.Gaming.XboxGameBar.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\runtimes\$(XboxGameBarRid)\native\Microsoft.Gaming.XboxGameBar.pri" Link="Microsoft.Gaming.XboxGameBar.pri" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\lib\uap10.0\Microsoft.Gaming.XboxGameBar.winmd" Link="Microsoft.Gaming.XboxGameBar.winmd" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
