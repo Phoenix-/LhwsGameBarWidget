@@ -12,6 +12,7 @@ namespace LhwsGameBarWidget;
 sealed partial class App : Application
 {
     private XboxGameBarWidget? sensorsWidget;
+    private XboxGameBarWidget? settingsWidget;
 
     public App()
     {
@@ -56,23 +57,43 @@ sealed partial class App : Application
                 return;
             }
 
-            Log($"widget activation, isLaunch={widgetArgs.IsLaunchActivation} uri={widgetArgs.Uri}");
+            Log($"widget activation, isLaunch={widgetArgs.IsLaunchActivation} extId={widgetArgs.AppExtensionId} uri={widgetArgs.Uri}");
             if (widgetArgs.IsLaunchActivation)
             {
                 var rootFrame = new Frame();
                 rootFrame.NavigationFailed += OnNavigationFailed;
                 Window.Current.Content = rootFrame;
 
-                // Bootstraps the connection with Game Bar; must be kept alive for the widget's lifetime
-                sensorsWidget = new XboxGameBarWidget(
+                // Bootstraps the connection with Game Bar; must be kept alive for the widget's lifetime.
+                // Each widget (main and settings) gets its own view thread and Window.Current.
+                var widget = new XboxGameBarWidget(
                     widgetArgs,
                     Window.Current.CoreWindow,
                     rootFrame);
-                rootFrame.Navigate(typeof(WidgetPage), sensorsWidget);
+                bool isSettings = widgetArgs.AppExtensionId == "LhwsSensorsSettings";
+                if (isSettings)
+                {
+                    settingsWidget = widget;
+                }
+                else
+                {
+                    sensorsWidget = widget;
+                }
+                rootFrame.Navigate(isSettings ? typeof(SettingsPage) : typeof(WidgetPage), widget);
 
-                Window.Current.Closed += WidgetWindow_Closed;
+                Window.Current.Closed += (s, e2) =>
+                {
+                    if (ReferenceEquals(settingsWidget, widget))
+                    {
+                        settingsWidget = null;
+                    }
+                    if (ReferenceEquals(sensorsWidget, widget))
+                    {
+                        sensorsWidget = null;
+                    }
+                };
                 Window.Current.Activate();
-                Log("widget bootstrapped");
+                Log($"widget bootstrapped ({(isSettings ? "settings" : "main")})");
             }
         }
         catch (Exception ex)
@@ -102,12 +123,6 @@ sealed partial class App : Application
         }
     }
 
-    private void WidgetWindow_Closed(object sender, Windows.UI.Core.CoreWindowEventArgs e)
-    {
-        sensorsWidget = null;
-        Window.Current.Closed -= WidgetWindow_Closed;
-    }
-
     private void OnNavigationFailed(object sender, NavigationFailedEventArgs e)
     {
         throw new Exception("Failed to load Page " + e.SourcePageType.FullName);
@@ -117,6 +132,7 @@ sealed partial class App : Application
     {
         var deferral = e.SuspendingOperation.GetDeferral();
         sensorsWidget = null;
+        settingsWidget = null;
         deferral.Complete();
     }
 }

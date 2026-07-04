@@ -10,7 +10,7 @@
   <Identity
     Name="LhwsGameBarWidget"
     Publisher="CN=Phoenix-"
-    Version="0.1.0.0" />
+    Version="0.1.5.0" />
 
   <Properties>
     <DisplayName>LHWS Sensors</DisplayName>
@@ -53,6 +53,7 @@
               <GameBarWidget Type="Standard">
                 <HomeMenuVisible>true</HomeMenuVisible>
                 <SupportsPinning>true</SupportsPinning>
+                <SettingsSupported AppExtensionId="LhwsSensorsSettings" />
                 <ActivateAfterInstall>false</ActivateAfterInstall>
                 <FavoriteAfterInstall>true</FavoriteAfterInstall>
                 <ActivationUri>ms-gamebarwidget://LhwsSensors</ActivationUri>
@@ -62,8 +63,39 @@
                   <Size>
                     <Height>400</Height>
                     <Width>320</Width>
-                    <MinHeight>200</MinHeight>
+                    <MinHeight>100</MinHeight>
                     <MinWidth>240</MinWidth>
+                    <MaxHeight>1000</MaxHeight>
+                    <MaxWidth>600</MaxWidth>
+                  </Size>
+                  <!-- Height is auto-fitted to content (TryResizeWindowAsync still works
+                       with Vertical=false); only the width is left to the user. -->
+                  <ResizeSupported>
+                    <Horizontal>true</Horizontal>
+                    <Vertical>false</Vertical>
+                  </ResizeSupported>
+                </Window>
+              </GameBarWidget>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="microsoft.gameBarUIExtension"
+                             Id="LhwsSensorsSettings"
+                             DisplayName="LHWS Sensors Settings"
+                             Description="Configure sensor rows shown by LHWS Sensors"
+                             PublicFolder="GameBar">
+            <uap3:Properties>
+              <GameBarWidget Type="Settings">
+                <ActivationUri>ms-gamebarwidget://LhwsSensorsSettings</ActivationUri>
+                <Icon>Assets\Square44x44Logo.png</Icon>
+                <Logo>Assets\Square150x150Logo.png</Logo>
+                <Window>
+                  <Size>
+                    <Height>560</Height>
+                    <Width>380</Width>
+                    <MinHeight>400</MinHeight>
+                    <MinWidth>340</MinWidth>
                     <MaxHeight>1000</MaxHeight>
                     <MaxWidth>600</MaxWidth>
                   </Size>

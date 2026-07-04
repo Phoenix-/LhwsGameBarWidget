@@ -5,7 +5,7 @@
     xmlns:local="using:LhwsGameBarWidget"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid Padding="10">
+    <Grid Padding="12,8,12,8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -14,38 +14,78 @@
         <TextBlock x:Name="StatusText"
                    Text="Connecting to LibreHardwareService…"
                    Style="{StaticResource CaptionTextBlockStyle}"
-                   Opacity="0.7"
-                   Margin="2,0,2,6"/>
+                   Opacity="0.6"
+                   Margin="4,0,4,4"/>
 
         <ListView x:Name="SensorList"
                   Grid.Row="1"
                   SelectionMode="None"
-                  IsItemClickEnabled="False">
+                  IsItemClickEnabled="False"
+                  ScrollViewer.VerticalScrollBarVisibility="Hidden">
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
-                    <Setter Property="MinHeight" Value="28"/>
-                    <Setter Property="Padding" Value="4,2"/>
+                    <Setter Property="MinHeight" Value="40"/>
+                    <Setter Property="Padding" Value="4,4,4,6"/>
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 </Style>
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:SensorRow">
+                <DataTemplate x:DataType="local:CompositeRow">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{x:Bind Label}"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1"
-                                   Text="{x:Bind ValueText, Mode=OneWay}"
-                                   FontWeight="SemiBold"
-                                   Margin="12,0,0,0"
-                                   VerticalAlignment="Center"/>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <!-- Equal star columns flanking the Auto column keep the
+                                 temperature exactly centered in the row -->
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Bind Name}"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="{x:Bind CenterText, Mode=OneWay}"
+                                       Foreground="{x:Bind CenterBrush, Mode=OneWay}"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0"/>
+                            <TextBlock Grid.Column="2"
+                                       Text="{x:Bind RightText, Mode=OneWay}"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                        </Grid>
+                        <ProgressBar Grid.Row="1"
+                                     Minimum="0" Maximum="100"
+                                     Value="{x:Bind BarValue, Mode=OneWay}"
+                                     Visibility="{x:Bind BarVisibility}"
+                                     Height="3"
+                                     Margin="0,4,0,0"/>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+
+        <StackPanel x:Name="EmptyState"
+                    Grid.Row="1"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="8"
+                    Visibility="Collapsed">
+            <TextBlock Text="No rows configured"
+                       Style="{StaticResource SubtitleTextBlockStyle}"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Open widget settings (⚙ in the title bar) and add sensor rows."
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Opacity="0.7"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       MaxWidth="240"/>
+        </StackPanel>
     </Grid>
 </Page>
