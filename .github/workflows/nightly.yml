@@ -1,0 +1,101 @@
+name: Nightly installer
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 03:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  nightly:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Skip when no commits in the last 25 hours (scheduled runs only)
+        id: fresh
+        shell: pwsh
+        run: |
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            'run=true' >> $env:GITHUB_OUTPUT
+          } else {
+            $count = [int](git rev-list --count --since='25 hours ago' HEAD)
+            "run=$($count -gt 0)".ToLower() >> $env:GITHUB_OUTPUT
+            Write-Host "Commits in the last 25h: $count"
+          }
+
+      - name: Install VS Universal Windows Platform tools (if missing)
+        if: steps.fresh.outputs.run == 'true'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $has = & $vswhere -latest -requires Microsoft.VisualStudio.ComponentGroup.UWP.Support -property installationPath
+          if ($has) { Write-Host "UWP tools already installed."; exit 0 }
+          $vs = & $vswhere -latest -property installationPath
+          Write-Host "Adding UWP tools to $vs ..."
+          $setup = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
+          $p = Start-Process -Wait -PassThru $setup -ArgumentList `
+            'modify', '--installPath', "`"$vs`"", `
+            '--add', 'Microsoft.VisualStudio.ComponentGroup.UWP.Support', `
+            '--quiet', '--norestart'
+          if ($p.ExitCode -ne 0 -and $p.ExitCode -ne 3010) { throw "VS setup exited with $($p.ExitCode)" }
+          $has = & $vswhere -latest -requires Microsoft.VisualStudio.ComponentGroup.UWP.Support -property installationPath
+          if (-not $has) { throw "UWP tools still missing after modify." }
+
+      - name: Import signing certificate
+        if: steps.fresh.outputs.run == 'true'
+        shell: pwsh
+        env:
+          SIGNING_CERT_PFX: ${{ secrets.SIGNING_CERT_PFX }}
+          SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        run: |
+          if (-not $env:SIGNING_CERT_PFX) { throw "SIGNING_CERT_PFX secret is not set." }
+          $pfx = Join-Path $env:RUNNER_TEMP 'sign.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGNING_CERT_PFX))
+          $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My `
+            -Password (ConvertTo-SecureString $env:SIGNING_CERT_PASSWORD -AsPlainText -Force)
+          Remove-Item $pfx
+          Write-Host "Imported $($cert.Subject) ($($cert.Thumbprint))"
+
+      - name: Stamp nightly version
+        if: steps.fresh.outputs.run == 'true'
+        id: ver
+        shell: pwsh
+        run: |
+          $manifest = 'src/LhwsGameBarWidget/Package.appxmanifest'
+          $xml = [xml](Get-Content $manifest -Raw)
+          $v = [version]$xml.Package.Identity.Version
+          $nightly = '{0}.{1}.{2}.{3}' -f $v.Major, $v.Minor, $v.Build, ${{ github.run_number }}
+          $xml.Package.Identity.Version = $nightly
+          $xml.Save((Resolve-Path $manifest))
+          "version=$nightly" >> $env:GITHUB_OUTPUT
+          Write-Host "Nightly version: $nightly"
+
+      - name: Build installer
+        if: steps.fresh.outputs.run == 'true'
+        shell: pwsh
+        run: .\pack.ps1 -Zip
+
+      - name: Upload artifact
+        if: steps.fresh.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LhwsGameBarWidget_${{ steps.ver.outputs.version }}_x64
+          path: AppPackages/LhwsGameBarWidget_${{ steps.ver.outputs.version }}_x64.zip
+
+      - name: Refresh nightly release
+        if: steps.fresh.outputs.run == 'true' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $zip = "AppPackages/LhwsGameBarWidget_${{ steps.ver.outputs.version }}_x64.zip"
+          gh release delete nightly --yes --cleanup-tag 2>$null; $global:LASTEXITCODE = 0
+          gh release create nightly $zip `
+            --prerelease `
+            --title "Nightly ${{ steps.ver.outputs.version }}" `
+            --notes "Automated nightly build of $env:GITHUB_SHA. Unzip and run Install.ps1."
