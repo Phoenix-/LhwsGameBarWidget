@@ -10,6 +10,10 @@
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <Nullable>enable</Nullable>
+    <!-- Required by the CsWinRT AOT optimizer to emit vtable lookup code for generic
+         collection instantiations (ItemsSource CCWs); without it they are silently
+         skipped and set_ItemsSource fails with E_INVALIDARG on Native AOT. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableMsixTooling>true</EnableMsixTooling>
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
@@ -24,7 +28,10 @@
   <ItemGroup>
     <!-- The Game Bar API surface comes via a CsWinRT projection (uap10.0-only package);
          the native implementation dll, pri and winmd still have to ship in the package. -->
-    <ProjectReference Include="..\XboxGameBar.Projection\XboxGameBar.Projection.csproj" />
+    <!-- UndefineProperties: the MSIX tooling's Pack target collides with NuGet's Pack
+         when GenerateAppxPackageOnBuild flows into referenced projects (MSB4006 cycle). -->
+    <ProjectReference Include="..\XboxGameBar.Projection\XboxGameBar.Projection.csproj"
+                      UndefineProperties="GenerateAppxPackageOnBuild;AppxPackageDir" />
     <PackageReference Include="Microsoft.Gaming.XboxGameBar" Version="7.2.240903001" GeneratePathProperty="true" ExcludeAssets="all" />
     <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\runtimes\$(XboxGameBarRid)\native\Microsoft.Gaming.XboxGameBar.dll" Link="Microsoft.Gaming.XboxGameBar.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\runtimes\$(XboxGameBarRid)\native\Microsoft.Gaming.XboxGameBar.pri" Link="Microsoft.Gaming.XboxGameBar.pri" CopyToOutputDirectory="PreserveNewest" />
