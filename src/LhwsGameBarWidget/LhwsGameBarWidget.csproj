@@ -29,6 +29,8 @@
     <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\runtimes\$(XboxGameBarRid)\native\Microsoft.Gaming.XboxGameBar.dll" Link="Microsoft.Gaming.XboxGameBar.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\runtimes\$(XboxGameBarRid)\native\Microsoft.Gaming.XboxGameBar.pri" Link="Microsoft.Gaming.XboxGameBar.pri" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\lib\uap10.0\Microsoft.Gaming.XboxGameBar.winmd" Link="Microsoft.Gaming.XboxGameBar.winmd" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Metadata Based Marshaling resolves the Private.* interfaces from this winmd at runtime -->
+    <Content Include="$(PkgMicrosoft_Gaming_XboxGameBar)\private\Microsoft.Gaming.XboxGameBar.Private.winmd" Link="Microsoft.Gaming.XboxGameBar.Private.winmd" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="GameBar\**" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

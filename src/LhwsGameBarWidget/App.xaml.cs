@@ -1,9 +1,11 @@
 using Microsoft.Gaming.XboxGameBar;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
+using Windows.Storage;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
+using WinRT;
 
 namespace LhwsGameBarWidget;
 
@@ -13,41 +15,70 @@ sealed partial class App : Application
 
     public App()
     {
+        // The projection assembly is not named after its root namespace, so CsWinRT
+        // cannot find it when it materializes Game Bar objects (e.g. activation args);
+        // registering it makes typed RCWs resolve properly.
+        ComWrappersSupport.RegisterProjectionAssembly(typeof(XboxGameBarWidget).Assembly);
         InitializeComponent();
         Suspending += OnSuspending;
     }
 
+    internal static void Log(string message)
+    {
+        try
+        {
+            File.AppendAllText(
+                Path.Combine(ApplicationData.Current.LocalFolder.Path, "widget.log"),
+                $"{DateTime.Now:HH:mm:ss.fff} {message}\r\n");
+        }
+        catch
+        {
+            // logging must never take the widget down
+        }
+    }
+
     protected override void OnActivated(IActivatedEventArgs args)
     {
-        XboxGameBarWidgetActivatedEventArgs? widgetArgs = null;
-        if (args.Kind == ActivationKind.Protocol)
+        try
         {
-            var protocolArgs = args as IProtocolActivatedEventArgs;
-            if (protocolArgs?.Uri.Scheme == "ms-gamebarwidget")
+            Log($"OnActivated kind={args.Kind}");
+            XboxGameBarWidgetActivatedEventArgs? widgetArgs = null;
+            if (args.Kind == ActivationKind.Protocol &&
+                args is IProtocolActivatedEventArgs protocolArgs &&
+                protocolArgs.Uri.Scheme == "ms-gamebarwidget")
             {
-                widgetArgs = args as XboxGameBarWidgetActivatedEventArgs;
+                widgetArgs = args as XboxGameBarWidgetActivatedEventArgs
+                    ?? XboxGameBarWidgetActivatedEventArgs.FromAbi(((IWinRTObject)args).NativeObject.ThisPtr);
+            }
+            if (widgetArgs == null)
+            {
+                Log("not a widget activation, ignoring");
+                return;
+            }
+
+            Log($"widget activation, isLaunch={widgetArgs.IsLaunchActivation} uri={widgetArgs.Uri}");
+            if (widgetArgs.IsLaunchActivation)
+            {
+                var rootFrame = new Frame();
+                rootFrame.NavigationFailed += OnNavigationFailed;
+                Window.Current.Content = rootFrame;
+
+                // Bootstraps the connection with Game Bar; must be kept alive for the widget's lifetime
+                sensorsWidget = new XboxGameBarWidget(
+                    widgetArgs,
+                    Window.Current.CoreWindow,
+                    rootFrame);
+                rootFrame.Navigate(typeof(WidgetPage), sensorsWidget);
+
+                Window.Current.Closed += WidgetWindow_Closed;
+                Window.Current.Activate();
+                Log("widget bootstrapped");
             }
         }
-        if (widgetArgs == null)
+        catch (Exception ex)
         {
-            return;
-        }
-
-        if (widgetArgs.IsLaunchActivation)
-        {
-            var rootFrame = new Frame();
-            rootFrame.NavigationFailed += OnNavigationFailed;
-            Window.Current.Content = rootFrame;
-
-            // Bootstraps the connection with Game Bar; must be kept alive for the widget's lifetime
-            sensorsWidget = new XboxGameBarWidget(
-                widgetArgs,
-                Window.Current.CoreWindow,
-                rootFrame);
-            rootFrame.Navigate(typeof(WidgetPage), sensorsWidget);
-
-            Window.Current.Closed += WidgetWindow_Closed;
-            Window.Current.Activate();
+            Log($"OnActivated FAILED: {ex}");
+            throw;
         }
     }
 
