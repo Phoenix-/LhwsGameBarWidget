@@ -19,7 +19,9 @@ data through memory-mapped files.
 ## Installing (end users)
 
 1. Install and start LibreHardwareService (with the AppContainer ACL patch, see above).
-2. Download `LhwsGameBarWidget_<version>_x64.zip` from the releases page and extract it.
+2. Download `LhwsGameBarWidget_<version>_x64.zip` from the releases page and extract it
+   (bleeding-edge builds live in the [nightly](../../releases/tag/nightly) prerelease,
+   rebuilt automatically on days that have new commits).
 3. Right-click `Install.ps1` → **Run with PowerShell**. The script:
    - imports the bundled `.cer` into *Local Machine → Trusted People* (asks for admin
      elevation — the package is signed with a self-signed certificate, so Windows must
@@ -61,6 +63,14 @@ scripts, and the `Dependencies\` folder (VCLibs). What it does:
 
 To publish a new version: bump `Version` in `Package.appxmanifest`, run `.\pack.ps1 -Zip`,
 upload the zip as a release asset.
+
+Nightlies: `.github/workflows/nightly.yml` runs daily (03:00 UTC; skipped when there are
+no new commits) and refreshes the rolling `nightly` prerelease. It stamps the manifest
+revision with the run number (`<major>.<minor>.<build>.<run>`), installs the VS
+*Universal Windows Platform tools* component on the runner (the image ships without it),
+and signs with the `CN=Phoenix-` certificate from the `SIGNING_CERT_PFX` /
+`SIGNING_CERT_PASSWORD` repository secrets — the same certificate as local builds, so
+one trusted cert covers both.
 
 Note: `GenerateAppxPackageOnBuild` must not flow into referenced projects — the MSIX
 tooling's `Pack` target collides with NuGet's `Pack` (MSB4006 cycle). The main csproj
