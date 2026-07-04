@@ -5,6 +5,28 @@
     xmlns:local="using:LhwsGameBarWidget"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
+    <Page.Resources>
+        <!-- Stock WUX ProgressBar draws square rectangles and ignores CornerRadius;
+             retemplate with a pill track + indicator (control drives the width of
+             the part named ProgressBarIndicator). -->
+        <Style x:Key="RoundedBarStyle" TargetType="ProgressBar">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}"
+                                    CornerRadius="2"/>
+                            <Rectangle x:Name="ProgressBarIndicator"
+                                       Fill="{TemplateBinding Foreground}"
+                                       RadiusX="2" RadiusY="2"
+                                       HorizontalAlignment="Left"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
     <Grid Padding="12,8,12,8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -50,21 +72,20 @@
                             <TextBlock Grid.Column="1"
                                        Text="{x:Bind CenterText, Mode=OneWay}"
                                        Foreground="{x:Bind CenterBrush, Mode=OneWay}"
-                                       FontWeight="SemiBold"
                                        VerticalAlignment="Center"
                                        Margin="8,0"/>
                             <TextBlock Grid.Column="2"
                                        Text="{x:Bind RightText, Mode=OneWay}"
-                                       FontWeight="SemiBold"
                                        HorizontalAlignment="Right"
                                        VerticalAlignment="Center"
                                        Margin="8,0,0,0"/>
                         </Grid>
                         <ProgressBar Grid.Row="1"
+                                     Style="{StaticResource RoundedBarStyle}"
                                      Minimum="0" Maximum="100"
                                      Value="{x:Bind BarValue, Mode=OneWay}"
                                      Visibility="{x:Bind BarVisibility}"
-                                     Height="3"
+                                     Height="4"
                                      Margin="0,4,0,0"/>
                     </Grid>
                 </DataTemplate>

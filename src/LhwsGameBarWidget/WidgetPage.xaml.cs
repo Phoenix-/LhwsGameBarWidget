@@ -165,14 +165,14 @@ public sealed partial class WidgetPage : Page
 
         if (!reader.IsConnected && !reader.TryConnect())
         {
-            StatusText.Text = "LibreHardwareService not found — is the service running?";
+            SetStatus("LibreHardwareService not found — is the service running?");
             return;
         }
 
         var snapshot = reader.Read();
         if (snapshot == null)
         {
-            StatusText.Text = "Waiting for sensor data…";
+            SetStatus("Waiting for sensor data…");
             return;
         }
 
@@ -193,8 +193,24 @@ public sealed partial class WidgetPage : Page
         }
 
         UpdateRows(snapshot);
-        StatusText.Text = "Updated " +
-            DateTimeOffset.FromUnixTimeSeconds(snapshot.LastUpdateUnixSeconds).ToLocalTime().ToString("HH:mm:ss");
+        SetStatus(null);
+    }
+
+    // The status line only appears while something is wrong; healthy ticks hide it
+    // entirely (data refreshes every second, a timestamp would just be a clock).
+    private void SetStatus(string? text)
+    {
+        if (text != null)
+        {
+            StatusText.Text = text;
+        }
+        var visibility = text == null ? Visibility.Collapsed : Visibility.Visible;
+        if (StatusText.Visibility != visibility)
+        {
+            StatusText.Visibility = visibility;
+            resizedRowCount = -1; // content height changed — re-fit the window
+            ResizeToRows();
+        }
     }
 
     private void RebuildRows(WidgetConfig config)
@@ -279,7 +295,11 @@ public sealed partial class WidgetPage : Page
     private double ComputeContentHeight()
     {
         UpdateLayout();
-        double h = 16 + StatusText.ActualHeight + 4; // page padding + status + its margin
+        double h = 16; // page padding
+        if (StatusText.Visibility == Visibility.Visible)
+        {
+            h += StatusText.ActualHeight + 4; // status line + its margin
+        }
         if (rows.Count == 0)
         {
             h += Math.Max(EmptyState.ActualHeight, 120);
