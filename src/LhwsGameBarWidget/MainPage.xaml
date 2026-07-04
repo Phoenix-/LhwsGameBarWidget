@@ -8,5 +8,8 @@
         <TextBlock Text="LHWS Sensors" Style="{StaticResource TitleTextBlockStyle}" HorizontalAlignment="Center"/>
         <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"
                    Text="This app is an Xbox Game Bar widget. Press Win+G and open the 'LHWS Sensors' widget."/>
+        <TextBlock x:Name="ServiceStatusText" Margin="0,16,0,0"
+                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                   Text="Checking LibreHardwareService…" Opacity="0.8"/>
     </StackPanel>
 </Page>
