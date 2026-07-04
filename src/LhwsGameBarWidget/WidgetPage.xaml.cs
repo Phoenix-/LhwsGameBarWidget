@@ -53,6 +53,11 @@ public sealed partial class WidgetPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         widget = e.Parameter as XboxGameBarWidget;
+        if (widget != null)
+        {
+            widget.RequestedThemeChanged += Widget_RequestedThemeChanged;
+            RequestedTheme = widget.RequestedTheme;
+        }
         timer.Tick += OnTick;
         timer.Start();
         OnTick(null, null!);
@@ -60,9 +65,20 @@ public sealed partial class WidgetPage : Page
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
+        if (widget != null)
+        {
+            widget.RequestedThemeChanged -= Widget_RequestedThemeChanged;
+        }
         timer.Stop();
         timer.Tick -= OnTick;
         reader.Dispose();
+    }
+
+    // Game Bar raises this off the UI thread
+    private async void Widget_RequestedThemeChanged(XboxGameBarWidget sender, object args)
+    {
+        await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
+            () => RequestedTheme = sender.RequestedTheme);
     }
 
     private void OnTick(object? sender, object e)
